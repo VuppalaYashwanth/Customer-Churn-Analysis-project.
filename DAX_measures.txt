@@ -1,0 +1,338 @@
+# =========================================
+# Power BI DAX Measures for Churn Analysis
+# =========================================
+# Purpose: Key metrics and calculations for the dashboard
+# Author: Your Name
+# Date: February 2026
+# =========================================
+
+# -----------------------------------------
+# 1. BASIC METRICS
+# -----------------------------------------
+
+# Total Customers
+Total Customers = COUNT(Customers[customerID])
+
+# Churned Customers
+Churned Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[Churn] = "Yes"
+)
+
+# Retained Customers
+Retained Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[Churn] = "No"
+)
+
+# -----------------------------------------
+# 2. CHURN METRICS
+# -----------------------------------------
+
+# Churn Rate
+Churn Rate = 
+DIVIDE(
+    [Churned Customers],
+    [Total Customers],
+    0
+)
+
+# Churn Rate (%)
+Churn Rate % = 
+FORMAT([Churn Rate], "0.00%")
+
+# Retention Rate
+Retention Rate = 
+1 - [Churn Rate]
+
+# Retention Rate (%)
+Retention Rate % = 
+FORMAT([Retention Rate], "0.00%")
+
+# -----------------------------------------
+# 3. REVENUE METRICS
+# -----------------------------------------
+
+# Total Monthly Revenue
+Total Monthly Revenue = 
+SUM(Customers[MonthlyCharges])
+
+# Average Monthly Charge
+Avg Monthly Charge = 
+AVERAGE(Customers[MonthlyCharges])
+
+# Total Lifetime Revenue
+Total Lifetime Revenue = 
+SUM(Customers[TotalCharges])
+
+# Revenue from Churned Customers
+Churned Revenue = 
+CALCULATE(
+    SUM(Customers[MonthlyCharges]),
+    Customers[Churn] = "Yes"
+)
+
+# Revenue from Retained Customers
+Retained Revenue = 
+CALCULATE(
+    SUM(Customers[MonthlyCharges]),
+    Customers[Churn] = "No"
+)
+
+# Annual Revenue at Risk
+Annual Revenue at Risk = 
+[Churned Revenue] * 12
+
+# Monthly Revenue at Risk %
+Revenue at Risk % = 
+DIVIDE(
+    [Churned Revenue],
+    [Total Monthly Revenue],
+    0
+)
+
+# Average Revenue per Churned Customer
+Avg Revenue Churned = 
+DIVIDE(
+    [Churned Revenue],
+    [Churned Customers],
+    0
+)
+
+# Average Revenue per Retained Customer
+Avg Revenue Retained = 
+DIVIDE(
+    [Retained Revenue],
+    [Retained Customers],
+    0
+)
+
+# Customer Lifetime Value (CLV)
+Customer LTV = 
+DIVIDE(
+    [Total Lifetime Revenue],
+    [Total Customers],
+    0
+)
+
+# -----------------------------------------
+# 4. COMPARATIVE METRICS
+# -----------------------------------------
+
+# Churn vs Industry Benchmark (assumed 20%)
+Churn vs Benchmark = 
+[Churn Rate] - 0.20
+
+# Performance Indicator
+Churn Performance = 
+IF(
+    [Churn Rate] > 0.25,
+    "🔴 High Risk",
+    IF(
+        [Churn Rate] > 0.20,
+        "🟡 Medium Risk",
+        "🟢 Low Risk"
+    )
+)
+
+# -----------------------------------------
+# 5. SEGMENT ANALYSIS
+# -----------------------------------------
+
+# High Value Customers (>$70/month)
+High Value Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[MonthlyCharges] > 70
+)
+
+# High Value Churn Rate
+High Value Churn Rate = 
+DIVIDE(
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[MonthlyCharges] > 70,
+        Customers[Churn] = "Yes"
+    ),
+    [High Value Customers],
+    0
+)
+
+# New Customers (0-6 months)
+New Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[tenure] <= 6
+)
+
+# New Customer Churn Rate
+New Customer Churn Rate = 
+DIVIDE(
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[tenure] <= 6,
+        Customers[Churn] = "Yes"
+    ),
+    [New Customers],
+    0
+)
+
+# Long-term Customers (48+ months)
+Long Term Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[tenure] >= 48
+)
+
+# -----------------------------------------
+# 6. CONTRACT ANALYSIS
+# -----------------------------------------
+
+# Month-to-Month Customers
+MTM Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[Contract] = "Month-to-month"
+)
+
+# Month-to-Month Churn Rate
+MTM Churn Rate = 
+DIVIDE(
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[Contract] = "Month-to-month",
+        Customers[Churn] = "Yes"
+    ),
+    [MTM Customers],
+    0
+)
+
+# Contract Revenue at Risk
+MTM Revenue at Risk = 
+CALCULATE(
+    SUM(Customers[MonthlyCharges]) * 12,
+    Customers[Contract] = "Month-to-month",
+    Customers[Churn] = "No"
+)
+
+# -----------------------------------------
+# 7. SERVICE ADOPTION METRICS
+# -----------------------------------------
+
+# Customers with Tech Support
+Tech Support Customers = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[TechSupport] = "Yes"
+)
+
+# Tech Support Churn Rate
+Tech Support Churn Rate = 
+DIVIDE(
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[TechSupport] = "Yes",
+        Customers[Churn] = "Yes"
+    ),
+    [Tech Support Customers],
+    0
+)
+
+# No Tech Support Churn Rate
+No Tech Support Churn Rate = 
+DIVIDE(
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[TechSupport] = "No",
+        Customers[Churn] = "Yes"
+    ),
+    CALCULATE(
+        COUNT(Customers[customerID]),
+        Customers[TechSupport] = "No"
+    ),
+    0
+)
+
+# -----------------------------------------
+# 8. TIME INTELLIGENCE (if date column available)
+# -----------------------------------------
+
+# Month-over-Month Churn Change
+MOM Churn Change = 
+VAR CurrentMonthChurn = [Churn Rate]
+VAR PreviousMonthChurn = 
+    CALCULATE(
+        [Churn Rate],
+        DATEADD(Customers[Date], -1, MONTH)
+    )
+RETURN
+    CurrentMonthChurn - PreviousMonthChurn
+
+# -----------------------------------------
+# 9. KPI INDICATORS
+# -----------------------------------------
+
+# Churn Trend Icon
+Churn Trend = 
+IF(
+    [MOM Churn Change] > 0,
+    "📈 Increasing",
+    IF(
+        [MOM Churn Change] < 0,
+        "📉 Decreasing",
+        "➡️ Stable"
+    )
+)
+
+# Priority Action Required
+Action Required = 
+IF(
+    [MTM Churn Rate] > 0.40,
+    "URGENT: High churn in MTM contracts",
+    IF(
+        [New Customer Churn Rate] > 0.45,
+        "WARNING: New customer retention issue",
+        IF(
+            [No Tech Support Churn Rate] > 0.35,
+            "ATTENTION: Tech support needed",
+            "✓ Monitor regularly"
+        )
+    )
+)
+
+# -----------------------------------------
+# 10. PREDICTIVE SCORES (if ML model integrated)
+# -----------------------------------------
+
+# Average Churn Risk Score
+Avg Churn Risk Score = 
+AVERAGE(Customers[PredictedChurnScore])
+
+# High Risk Customer Count (>0.7 probability)
+High Risk Count = 
+CALCULATE(
+    COUNT(Customers[customerID]),
+    Customers[PredictedChurnScore] > 0.7,
+    Customers[Churn] = "No"
+)
+
+# Revenue at Risk from High Risk Customers
+High Risk Revenue = 
+CALCULATE(
+    SUM(Customers[MonthlyCharges]) * 12,
+    Customers[PredictedChurnScore] > 0.7,
+    Customers[Churn] = "No"
+)
+
+# -----------------------------------------
+# END OF DAX MEASURES
+# -----------------------------------------
+
+# USAGE NOTES:
+# 1. Copy these measures into Power BI Desktop
+# 2. Format percentage measures as needed
+# 3. Format currency measures with $ symbol
+# 4. Create calculated columns for TenureGroup, ChargeGroup if not in data
+# 5. Adjust thresholds based on business requirements
