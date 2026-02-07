@@ -285,10 +285,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-**Your Name**  
-- Email: your.email@example.com
-- LinkedIn: [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
-- Portfolio: [yourwebsite.com](https://yourwebsite.com)
+**Vuppala Yashwanth**  
+- Email: yashwanthvuppala123@.com
+- LinkedIn: [linkedin.com/in/yourprofile](https://linkedin.com/in/yashwanth-vuppala)
 
 ---
 
